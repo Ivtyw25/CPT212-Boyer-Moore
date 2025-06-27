@@ -1,3 +1,4 @@
+%%writefile main.cpp
 #include <iostream>
 #include <string>
 #include <vector>
@@ -15,14 +16,10 @@ void printAlignmentStep(int step, int shift) {
     std::cout << "Step " << step << ": Pattern aligned at index " << shift << std::endl;
 }
 
-void printComparisons(int comparisons) {
-    std::cout << " - Comparisons this step: " << comparisons << std::endl;
-}
-
 void printShiftDetails(int badCharShift, int goodSuffixShift, const std::string& heuristic, int shiftAmount) {
-    std::cout << " - Bad character shift: " << badCharShift << std::endl;
-    std::cout << " - Good suffix shift: " << goodSuffixShift << std::endl;
-    std::cout << " - Heuristic Chosen: " << heuristic << "\n - Shifting right by: " << shiftAmount << std::endl;
+    std::cout << "- Bad character shift: " << badCharShift;
+    std::cout << "      - Good suffix shift: " << goodSuffixShift;
+    std::cout << "      - Heuristic Chosen: " << heuristic << "      - Shifting right by: " << shiftAmount << std::endl;
 }
 
 void printPatternAlignment(const std::string& pattern, const std::string& text, int shift) {
@@ -37,7 +34,7 @@ void printPatternAlignment(const std::string& pattern, const std::string& text, 
 * Preprocesses the pattern to create the bad character heuristic table.
 * This table stores the last index of each character's occurence in the pattern.
 * When a mismatch occurs at a character `c` in the text, the pattern can be shifted
-* forward so that the last occurent of `c` in the pattern aligns with the mismatched 
+* forward so that the last occurent of `c` in the pattern aligns with the mismatched
 * character in the text. If `c` is not in the pattern, the pattern can be shifted
 * completely past it.
 *
@@ -49,7 +46,7 @@ void precomputeBadCharacterTable(const std::string& pattern, std::vector<int>& b
     badCharTable.assign(NUM_CHARS, -1); // Initializes all characters to -1 (not found)
 
     // For each character in the pattern, record its index
-    // If a character appears multiple times, it will take the last index 
+    // If a character appears multiple times, it will take the last index
     for (int i = 0; i < patternLength; ++i) {
         badCharTable[(unsigned char)pattern[i]] = i;
     }
@@ -57,9 +54,9 @@ void precomputeBadCharacterTable(const std::string& pattern, std::vector<int>& b
 
 /**
 * Preprocesses the pattern to create the good suffix heuristic table
-* The good suffix rule is applied when a mismatch occurs after a suffix of the pattern 
+* The good suffix rule is applied when a mismatch occurs after a suffix of the pattern
 * has matched the text. The good suffix rule have two cases:
-* 
+*
 * 1. Find another occurence of the good suffix in the pattern that is not preceded
 * by the same character as the mismatched one. Shift to align with it.
 *
@@ -131,7 +128,7 @@ void searchBoyerMoore(const std::string& text, const std::string& pattern) {
         std::cout << "Pattern is empty or longer than the text." << std::endl;
         return;
     }
-  
+
     // Vector to store the starting indices where pattern matches texxt
     std::vector<int> matchedIndex;
 
@@ -146,7 +143,6 @@ void searchBoyerMoore(const std::string& text, const std::string& pattern) {
 
     int shift = 0;              // current alignment of pattern relative to text
     bool found = false;         // Flag to indicate if a match has been found
-    int totalComparisons = 0;   // Total number of character comparisons performed
     int totalSkippedChars = 0;  // Total number of characters skipped through shifting
     int step = 1;               // Step counter for display output
 
@@ -158,15 +154,12 @@ void searchBoyerMoore(const std::string& text, const std::string& pattern) {
 
         // Compare pattern and text from right to left
         while (j >= 0) {
-               comparisonsThisStep++;
                if (pattern[j] == text[shift + j]) {
                 j--;    // If characters match, move one position left
                } else {
                 break;  // Exit when mismatch found
                }
         }
-
-        totalComparisons += comparisonsThisStep;
 
         // If j < 0 meaning a full match was found at current step
         if (j < 0) {
@@ -176,15 +169,15 @@ void searchBoyerMoore(const std::string& text, const std::string& pattern) {
             // Shift pattern using the Good suffix rule for a full match
             int finalShift = goodSuffixShifts[0];
             if (finalShift + shift <= (n-m))
-              std::cout << " - Shifting right by: " << finalShift << std::endl;
+              std::cout << "- Shifting right by: " << finalShift << "      - Chosen Heuristic: Good Suffix" << std::endl;
 
             shift += finalShift;  // Apply the shift
-            if (finalShift > 1) totalSkippedChars += finalShift - 1;  // Compute the skipped characters
+            if (finalShift > 1 && shift <= (n-m)) totalSkippedChars += finalShift - 1;  // Compute the skipped characters
             found = true; // Mark that at least one match was found
             step++;       // Move to the next alignment step
 
-        } 
-        
+        }
+
         // Mismatched occured at patter[j]
         else {
 
@@ -202,10 +195,9 @@ void searchBoyerMoore(const std::string& text, const std::string& pattern) {
 
             printShiftDetails(badCharShift, goodSuffixShift, heuristic, finalShift);
             shift += finalShift; // Apply the chosen shift
-            if (finalShift > 1) totalSkippedChars += finalShift - 1;
+            if (finalShift > 1 && shift <= (n-m)) totalSkippedChars += finalShift - 1;
             step++;
         }
-        printComparisons(comparisonsThisStep);
         if (shift <= (n - m))
           printPatternAlignment(pattern, text, shift);
     }
@@ -213,23 +205,22 @@ void searchBoyerMoore(const std::string& text, const std::string& pattern) {
     if (!found) {
         std::cout << "Pattern not found in the text." << std::endl;
     }
-    
+
     // Final results summary
     std::cout << "\n================================================" << std::endl;
     std::cout << "The pattern matched the text at index: ";
     for (int i = 0; i < matchedIndex.size(); i++) {
         std::cout << matchedIndex[i] << " ";
     }
-    std::cout << "\nTotal Comparisons: " << totalComparisons << std::endl;
-    std::cout << "Total Skipped Characters: " << totalSkippedChars << std::endl;
+    std::cout << "\nTotal Skipped Characters: " << totalSkippedChars << std::endl;
 }
 
 // ============================================================
 // Main Program Entry Point
 // ============================================================
 int main() {
-    std::string text = "ABCBCABDCBCADCBACBC";
-    std::string pattern = "CBCA";
+    std::string text = "AAAAAAB";
+    std::string pattern = "AB";
 
     std::cout << "Text:    " << text << std::endl;
     std::cout << "Pattern: " << pattern << std::endl;
